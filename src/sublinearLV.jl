@@ -16,17 +16,17 @@ function ppart(x)
     return max(x, 0)
 end
 
-
+## drift term
 function f!(du, u, p, t)
     v = ppart.(u)
     du .= v.*(v.^(p[:k]-1) - (v/p[:K]).^2 - p[:A]*v) + p[:imm]
 end
 
+## diffusion term
 function g!(du, u, p, t)
     du .= sqrt.(p[:T]*ppart.(u))
 end
 
-IC = rand(15)
 
 function LV_plot(params; max_time = 100)
 
