@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate
-include("../src/sublinearLV.jl")
+include("../src/generalized-LV.jl")
 
 using ProgressMeter
 
