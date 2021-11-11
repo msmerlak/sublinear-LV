@@ -1,3 +1,6 @@
+using DrWatson
+@quickactivate
+    
 using DifferentialEquations
 using Random, Distributions
 using LinearAlgebra
@@ -24,6 +27,10 @@ function ppart(x)
 end
 
 
+function drift(u, p, t)
+    return u.^p["k"] .- u.^2. / p["K"]^(2-p["k"]) .- u.*(p["A"]*u) .+ p["imm"]
+end
+
 function drift!(du, u, p, t)
         u .= ppart.(u)
         du .= u.^p["k"] .- u.^2. / p["K"]^(2-p["k"]) .- u.*(p["A"]*u) .+ p["imm"]
@@ -38,31 +45,18 @@ function diffusion!(du, u, p, t)
     du .= sqrt.(p["T"]*u)
 end
 
-## diversity
-function xlogx(x)
-    if x <= 0.
-        return 0.
-    else
-        return x*log(x)
-    end
-end
-
-function diversity(u::Vector)
-    v = u./norm(u, 1)
-    return exp(-sum(xlogx.(v)))
-end
-diversity(sol::T) where T<:SciMLBase.AbstractTimeseriesSolution = diversity(sol.u[end])
-
 
 ## solving
 blowup(threshold = 1e3) = DiscreteCallback((u, t, integrator) -> maximum(u) > threshold, terminate!)
 collapse(fraction = 0.1) = DiscreteCallback((u, t, integrator) -> diversity(u) < fraction*length(u), terminate!)
 converged(abstol = 1e-3) = TerminateSteadyState(abstol)
 
-function  LV_problem(params; k = 1., x₀ = nothing, termination = [blowup()], max_time = 1000.)
+function  LV_problem(params; k = 1., x₀ = nothing, max_time = 1000.)
+    
     p = copy(params)
     p["imm"] = fill(p["λ"], p["S"])
     p["A"] = interaction_matrix(p["S"], p["μ"], p["σ"], p["symm"], p["scaled"])
+    
     if x₀ === nothing
         x₀ = rand(p["S"])
     end
@@ -74,6 +68,7 @@ function  LV_problem(params; k = 1., x₀ = nothing, termination = [blowup()], m
     else
         pb = SDEProblem(drift!, diffusion!, x₀, (0., max_time), p);
     end
+    
     return pb
 end
 
@@ -93,7 +88,8 @@ function  LV_solver(params; k = 1., x₀ = nothing, termination = [blowup()], ma
         pb = SDEProblem(drift!, diffusion!, x₀, (0., max_time), p);
     end
 
-    solve(pb, callback = CallbackSet(termination...))
+    p["sol"] = solve(pb, callback = CallbackSet(termination...))
+    return p
 end
 
 
