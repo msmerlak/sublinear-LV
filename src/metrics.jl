@@ -21,3 +21,4 @@ function richness(u::Vector, tol = 1e-3)
     return length(u[u.>tol])
 end
 richness(sol::T) where T<:SciMLBase.AbstractTimeseriesSolution = richness(sol.u[end])
+
