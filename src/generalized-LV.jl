@@ -77,14 +77,12 @@ end
 ## lyapunov spectrum
 
 using DynamicalSystems
-function  LV_lyap(params; k, x₀ = nothing, termination = [PositiveDomain(), blowup()], max_time = 1000.)
+function  LV_lyap(params; k = 1, x₀ = nothing, termination = [blowup()], max_time = 1000.)
 
 
-    if p["T"] == 0.
-        pb = LV_problem(params; k = k, x₀ = x₀, max_time = max_time)
-    else
-        error("Lyapunov spectrum only at zero T")
-    end
+    @assert p["T"] == 0. "Lyapunov spectrum only at zero T"
     
-    lyapunov(pb, max_time, callback = CallbackSet(termination...))
+    pb, params = LV_problem(params, k = k, x₀ = x₀, max_time = max_time)
+
+    return lyapunov(ContinuousDynamicalSystem(pb), max_time, callback = CallbackSet(termination...))
 end
