@@ -38,9 +38,12 @@ end
 
 
 ## solving
-blowup(threshold = 1e3) = DiscreteCallback((u, t, integrator) -> maximum(u) > threshold, i -> terminate!(i, retcode = :blowup))
-collapse(fraction = 0.1) = DiscreteCallback((u, t, integrator) -> diversity(u) < fraction*length(u), i -> terminate!(i, retcode = :collapse))
+blowup(threshold = 100) = DiscreteCallback((u, t, integrator) -> maximum(u) > threshold, terminate!)
+collapse(fraction = 0.1) = DiscreteCallback((u, t, integrator) -> diversity(u) < fraction*length(u), terminate!)
 converged(abstol = 1e-3) = TerminateSteadyState(abstol)
+
+SOLVER = Tsit5()
+ϵ = 1e-3
 
 function  LV_problem(params; k = 1., x₀ = nothing, max_time = 1000.)
     
@@ -71,7 +74,9 @@ end
 function  LV_solver(params; k = 1., x₀ = nothing, termination = [blowup()], max_time = 1000.)
 
     pb, params = LV_problem(params, k = k, x₀ = x₀, max_time = max_time)
-    return solve(pb, callback = CallbackSet(termination...)), params
+    return solve(pb,
+    saveat = 0:1:max_time,
+     callback = CallbackSet(termination...)), params
 end
 
 ## lyapunov spectrum
@@ -84,5 +89,7 @@ function  LV_lyap(params; k = 1, x₀ = nothing, termination = [blowup()], max_t
     
     pb, params = LV_problem(params, k = k, x₀ = x₀, max_time = max_time)
 
-    return lyapunov(ContinuousDynamicalSystem(pb), max_time, callback = CallbackSet(termination...))
+    return lyapunov(ContinuousDynamicalSystem(pb), max_time, 
+    alg = BS3(),
+    callback = CallbackSet(termination...))
 end

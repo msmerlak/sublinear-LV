@@ -6,7 +6,7 @@ include(srcdir("metrics.jl"))
 
 using ForwardDiff
 
-function sim(params, k; max_time = 1000, termination = [blowup(), converged()])
+function sim(params, k; lyapunov = true, max_time = 1000, termination = [blowup(), converged()])
     sol, params = LV_solver(
         params, k = k, max_time = max_time, termination = termination
     )
@@ -14,9 +14,11 @@ function sim(params, k; max_time = 1000, termination = [blowup(), converged()])
     params["k"] = k
     jac = ForwardDiff.jacobian(u -> F(u, params), sol[end])
 
-    λ = LV_lyap(
-        params, k = k, max_time = max_time, termination = termination
-    )
+    if lyapunov
+        λ = LV_lyap(
+            params, k = k, max_time = max_time, termination = termination
+        )
+    end
     return (
         params = params,
         status = sol.retcode ,
@@ -26,7 +28,7 @@ function sim(params, k; max_time = 1000, termination = [blowup(), converged()])
         trajectory = sol,
         jacobian = jac,
         spectrum = eigen(jac).values,
-        largest_lyapunov_exponent = λ
+        largest_lyapunov_exponent = lyapunov ? λ : nothing
         )
 end
 
