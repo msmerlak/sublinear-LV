@@ -38,12 +38,10 @@ end
 
 
 ## solving
-blowup(threshold = 100) = DiscreteCallback((u, t, integrator) -> maximum(u) > threshold, terminate!)
+blowup(threshold = 500) = DiscreteCallback((u, t, integrator) -> maximum(u) > threshold, terminate!)
 collapse(fraction = 0.1) = DiscreteCallback((u, t, integrator) -> diversity(u) < fraction*length(u), terminate!)
-converged(abstol = 1e-3) = TerminateSteadyState(abstol)
+converged(abstol = 1e-6) = TerminateSteadyState(abstol)
 
-SOLVER = Tsit5()
-ϵ = 1e-3
 
 function  LV_problem(params; k = 1., x₀ = nothing, max_time = 1000.)
     
